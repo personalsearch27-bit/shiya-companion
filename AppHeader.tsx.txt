@@ -1,0 +1,63 @@
+import React from 'react';
+import { Settings, Sliders, History, Heart } from 'lucide-react';
+
+interface Props {
+  engineStatus: { status: string; hasApiKey: boolean; engine: string };
+  onOpenSettings: () => void;
+  onOpenCustomizer: () => void;
+  onOpenHistory: () => void;
+}
+
+export const AppHeader: React.FC<Props> = ({
+  engineStatus,
+  onOpenSettings,
+  onOpenCustomizer,
+  onOpenHistory,
+}) => {
+  return (
+    <header className="h-14 border-b border-white/10 bg-[#09090D]/80 backdrop-blur-md px-4 flex items-center justify-between z-20">
+      <div className="flex items-center gap-2">
+        <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#FF304F] to-[#FF8196] flex items-center justify-center shadow-[0_0_12px_rgba(255,48,79,0.4)]">
+          <Heart size={16} className="text-white fill-white" />
+        </div>
+        <div>
+          <h1 className="text-base font-bold tracking-wider text-white lowercase">shiya</h1>
+          <div className="flex items-center gap-1.5">
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${
+                engineStatus.hasApiKey ? 'bg-emerald-400' : 'bg-amber-400'
+              }`}
+            />
+            <span className="text-[10px] text-[#A49BAA]">
+              {engineStatus.hasApiKey ? 'Gemini 2.5' : 'Demo Mode'}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-1">
+        <button
+          onClick={onOpenHistory}
+          className="p-2 text-[#A49BAA] hover:text-white rounded-full hover:bg-white/5 active:scale-95 transition"
+          title="Conversation History"
+        >
+          <History size={18} />
+        </button>
+        <button
+          onClick={onOpenCustomizer}
+          className="p-2 text-[#A49BAA] hover:text-white rounded-full hover:bg-white/5 active:scale-95 transition"
+          title="Customize Appearance"
+        >
+          <Sliders size={18} />
+        </button>
+        <button
+          onClick={onOpenSettings}
+          className="p-2 text-[#A49BAA] hover:text-white rounded-full hover:bg-white/5 active:scale-95 transition"
+          title="Settings & Persona"
+        >
+          <Settings size={18} />
+        </button>
+      </div>
+    </header>
+  );
+};

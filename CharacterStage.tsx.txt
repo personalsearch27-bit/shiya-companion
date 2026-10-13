@@ -1,0 +1,81 @@
+import React from 'react';
+import { CharacterAvatar } from './CharacterAvatar';
+import { MoodType, VoiceState } from '../types';
+import { Sparkles, Heart } from 'lucide-react';
+
+interface Props {
+  mood: MoodType;
+  voiceState: VoiceState;
+  customAvatarUrl?: string;
+  name: string;
+  intensity?: number;
+}
+
+export const CharacterStage: React.FC<Props> = ({
+  mood,
+  voiceState,
+  customAvatarUrl,
+  name,
+  intensity = 1.0,
+}) => {
+  const isSpeaking = voiceState === 'speaking';
+  const isListening = voiceState === 'listening';
+
+  const getMoodLabel = () => {
+    switch (voiceState) {
+      case 'listening': return 'listening to you...';
+      case 'processing': return 'thinking deeply...';
+      case 'speaking': return 'talking with you...';
+      default:
+        switch (mood) {
+          case 'happy': return 'happy to see you';
+          case 'shy': return 'feeling a little bashful';
+          case 'curious': return 'intrigued';
+          case 'sleepy': return 'cozy and quiet';
+          case 'sad': return 'worried about you';
+          default: return 'relaxed';
+        }
+    }
+  };
+
+  return (
+    <div className="relative w-full max-w-sm mx-auto flex flex-col items-center justify-center p-3 sm:p-5 select-none">
+      {/* Ambient Crimson Glow Backdrop */}
+      <div className="absolute w-52 h-52 sm:w-64 sm:h-64 rounded-full bg-[#FF304F]/15 blur-3xl pointer-events-none transition-all duration-700" />
+      
+      {/* Subtle Floating Sparkles */}
+      <div className="absolute top-2 left-6 text-[#FF8196] opacity-60 sparkle" style={{ animationDelay: '0s' }}>
+        <Sparkles size={16} />
+      </div>
+      <div className="absolute top-12 right-6 text-[#FF304F] opacity-50 sparkle" style={{ animationDelay: '1.4s' }}>
+        <Heart size={14} />
+      </div>
+
+      {/* Main Avatar Canvas */}
+      <div className="relative w-48 h-56 sm:w-56 sm:h-64 flex items-center justify-center z-10">
+        <CharacterAvatar
+          mood={mood}
+          isSpeaking={isSpeaking}
+          isListening={isListening}
+          customAvatarUrl={customAvatarUrl}
+          intensity={intensity}
+        />
+      </div>
+
+      {/* Character Identity & Status Indicator */}
+      <div className="mt-2 text-center z-10">
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#1D1922]/90 border border-white/10 backdrop-blur-md shadow-lg">
+          <span 
+            className={`w-2 h-2 rounded-full transition-colors duration-300 ${
+              isListening ? 'bg-amber-400 animate-pulse' : 
+              isSpeaking ? 'bg-[#FF304F] animate-ping' : 
+              'bg-emerald-400'
+            }`} 
+          />
+          <span className="text-xs font-semibold tracking-wide text-[#FAF7FA]">{name}</span>
+          <span className="text-[11px] text-[#A49BAA] font-light capitalize">• {getMoodLabel()}</span>
+        </div>
+      </div>
+    </div>
+  );
+};

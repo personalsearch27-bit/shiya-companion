@@ -1,0 +1,56 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-base: #09090d;
+  --surface-main: #141219;
+  --surface-elevated: #1d1922;
+  --accent-primary: #ff304f;
+  --accent-soft: #ff8196;
+  --text-main: #faf7fa;
+  --text-sub: #a49baa;
+  --border-subtle: rgba(255, 255, 255, 0.08);
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  background-color: var(--bg-base);
+  color: var(--text-main);
+  overflow-x: hidden;
+  touch-action: manipulation;
+}
+
+/* Custom subtle scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-primary);
+}
+
+@keyframes gentle-breath {
+  0%, 100% { transform: translateY(0px) scale(1); }
+  50% { transform: translateY(-4px) scale(1.008); }
+}
+
+@keyframes float-sparkle {
+  0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+  50% { opacity: 0.8; }
+  100% { transform: translateY(-30px) rotate(45deg); opacity: 0; }
+}
+
+.animate-breathing {
+  animation: gentle-breath 4.5s ease-in-out infinite;
+}
+
+.sparkle {
+  animation: float-sparkle 3s ease-in-out infinite;
+}

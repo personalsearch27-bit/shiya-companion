@@ -1,0 +1,104 @@
+import React, { useEffect, useRef } from 'react';
+import { Message } from '../types';
+import { User, Sparkles } from 'lucide-react';
+
+interface Props {
+  messages: Message[];
+  isThinking: boolean;
+  onSelectPrompt: (prompt: string) => void;
+}
+
+const QUICK_PROMPTS = [
+  "Cheer me up.",
+  "Let's study together.",
+  "Tell me something cute.",
+  "How was your day?",
+  "Let's talk about mathematics."
+];
+
+export const ChatPanel: React.FC<Props> = ({ messages, isThinking, onSelectPrompt }) => {
+  const bottomRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isThinking]);
+
+  return (
+    <div className="flex-1 flex flex-col min-h-0 overflow-y-auto px-3 sm:px-5 py-2 space-y-3">
+      {messages.length === 0 ? (
+        <div className="flex-1 flex flex-col items-center justify-center text-center p-6 space-y-4">
+          <div className="w-12 h-12 rounded-2xl bg-[#FF304F]/10 border border-[#FF304F]/20 flex items-center justify-center text-[#FF8196]">
+            <Sparkles size={22} />
+          </div>
+          <div>
+            <h3 className="text-base font-semibold text-white">Shiya is right here</h3>
+            <p className="text-xs text-[#A49BAA] mt-1 max-w-xs">
+              Say hello or tap one of the ideas below to start chatting together.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2 justify-center max-w-sm pt-2">
+            {QUICK_PROMPTS.map((prompt) => (
+              <button
+                key={prompt}
+                onClick={() => onSelectPrompt(prompt)}
+                className="text-xs px-3 py-1.5 rounded-full bg-[#141219] hover:bg-[#1D1922] border border-white/10 text-[#FAF7FA] transition active:scale-95 text-left"
+              >
+                {prompt}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <>
+          {messages.map((msg) => {
+            const isUser = msg.sender === 'user';
+            return (
+              <div
+                key={msg.id}
+                className={`flex gap-2.5 max-w-[88%] sm:max-w-[80%] ${
+                  isUser ? 'ml-auto flex-row-reverse' : 'mr-auto'
+                } animate-fadeIn`}
+              >
+                <div
+                  className={`w-7 h-7 shrink-0 rounded-full flex items-center justify-center text-xs font-semibold ${
+                    isUser
+                      ? 'bg-white/10 text-white'
+                      : 'bg-[#FF304F] text-white shadow-[0_0_12px_rgba(255,48,79,0.4)]'
+                  }`}
+                >
+                  {isUser ? <User size={13} /> : 'S'}
+                </div>
+                <div
+                  className={`rounded-2xl px-4 py-2.5 text-xs sm:text-sm leading-relaxed shadow-sm transition-all ${
+                    isUser
+                      ? 'bg-[#1D1922] text-[#FAF7FA] border border-white/10 rounded-tr-none'
+                      : 'bg-[#141219] text-[#FAF7FA] border border-[#FF304F]/20 rounded-tl-none'
+                  }`}
+                >
+                  <p className="whitespace-pre-wrap">{msg.text}</p>
+                  <span className="block text-[9px] text-[#A49BAA] mt-1 text-right">
+                    {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+
+          {isThinking && (
+            <div className="flex gap-2 mr-auto items-center">
+              <div className="w-7 h-7 rounded-full bg-[#FF304F] text-white flex items-center justify-center text-xs">
+                S
+              </div>
+              <div className="bg-[#141219] border border-white/10 rounded-2xl px-3 py-2 flex items-center space-x-1.5">
+                <span className="w-1.5 h-1.5 bg-[#FF8196] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <span className="w-1.5 h-1.5 bg-[#FF8196] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <span className="w-1.5 h-1.5 bg-[#FF8196] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              </div>
+            </div>
+          )}
+        </>
+      )}
+      <div ref={bottomRef} />
+    </div>
+  );
+};

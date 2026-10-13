@@ -1,0 +1,225 @@
+import React, { useState, useEffect } from 'react';
+import { MoodType } from '../types';
+
+interface Props {
+  mood: MoodType;
+  isSpeaking: boolean;
+  isListening: boolean;
+  customAvatarUrl?: string;
+  intensity?: number;
+}
+
+export const CharacterAvatar: React.FC<Props> = ({
+  mood,
+  isSpeaking,
+  isListening,
+  customAvatarUrl,
+  intensity = 1.0,
+}) => {
+  const [blink, setBlink] = useState(false);
+  const [mouthFrame, setMouthFrame] = useState(0);
+
+  // Natural blinking effect
+  useEffect(() => {
+    const blinkInterval = setInterval(() => {
+      setBlink(true);
+      setTimeout(() => setBlink(false), 160);
+    }, 3800 + Math.random() * 2500);
+
+    return () => clearInterval(blinkInterval);
+  }, []);
+
+  // Mouth movement synchronization while speaking
+  useEffect(() => {
+    if (!isSpeaking) {
+      setMouthFrame(0);
+      return;
+    }
+    const mouthInterval = setInterval(() => {
+      setMouthFrame(prev => (prev + 1) % 4);
+    }, 120);
+
+    return () => clearInterval(mouthInterval);
+  }, [isSpeaking]);
+
+  if (customAvatarUrl) {
+    return (
+      <div 
+        className="relative w-full h-full flex items-center justify-center animate-breathing"
+        style={{ animationDuration: `${4.5 / intensity}s` }}
+      >
+        <img
+          src={customAvatarUrl}
+          alt="Shiya Custom Avatar"
+          className="w-full h-full object-cover rounded-full border-2 border-[#FF304F]/40 shadow-[0_0_35px_rgba(255,48,79,0.3)] transition-all duration-300"
+        />
+        {isSpeaking && (
+          <div className="absolute inset-0 rounded-full border-2 border-[#FF8196] animate-ping opacity-25 pointer-events-none" />
+        )}
+      </div>
+    );
+  }
+
+  // Expression geometry helpers
+  const getEyebrowY = () => {
+    switch (mood) {
+      case 'sad': return 82;
+      case 'shy': return 76;
+      case 'curious': return 72;
+      default: return 75;
+    }
+  };
+
+  const getMouthD = () => {
+    if (isSpeaking) {
+      switch (mouthFrame) {
+        case 0: return 'M 93 148 Q 100 156 107 148 Q 100 150 93 148 Z';
+        case 1: return 'M 91 146 Q 100 162 109 146 Q 100 152 91 146 Z';
+        case 2: return 'M 94 148 Q 100 153 106 148 Z';
+        default: return 'M 92 147 Q 100 159 108 147 Z';
+      }
+    }
+    switch (mood) {
+      case 'happy': return 'M 93 148 Q 100 156 107 148';
+      case 'shy': return 'M 95 149 Q 100 153 105 149';
+      case 'sad': return 'M 94 153 Q 100 148 106 153';
+      case 'curious': return 'M 96 148 A 4 4 0 1 0 104 148 A 4 4 0 1 0 96 148';
+      default: return 'M 95 149 Q 100 152 105 149';
+    }
+  };
+
+  const isBlushing = mood === 'shy' || mood === 'happy';
+
+  return (
+    <div 
+      className="relative w-full h-full flex items-center justify-center animate-breathing"
+      style={{ animationDuration: `${4.5 / intensity}s` }}
+    >
+      <svg
+        viewBox="0 0 200 240"
+        className="w-full h-full max-h-[300px] drop-shadow-[0_12px_32px_rgba(255,48,79,0.22)] select-none transition-all duration-300"
+      >
+        <defs>
+          <linearGradient id="hairGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#251624" />
+            <stop offset="60%" stopColor="#18111D" />
+            <stop offset="100%" stopColor="#0E0A12" />
+          </linearGradient>
+          <linearGradient id="hairHighlight" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="transparent" />
+            <stop offset="50%" stopColor="#FF304F" stopOpacity="0.4" />
+            <stop offset="100%" stopColor="transparent" />
+          </linearGradient>
+          <radialGradient id="irisGrad" cx="50%" cy="40%" r="55%">
+            <stop offset="0%" stopColor="#FF8196" />
+            <stop offset="50%" stopColor="#FF304F" />
+            <stop offset="100%" stopColor="#7A0018" />
+          </radialGradient>
+        </defs>
+
+        {/* Long Back Hair */}
+        <path
+          d="M 50 100 C 35 150 40 220 52 240 L 148 240 C 160 220 165 150 150 100 Z"
+          fill="url(#hairGrad)"
+        />
+
+        {/* Neck & Shoulder Silhouette */}
+        <path d="M 88 155 L 88 190 L 112 190 L 112 155 Z" fill="#FCECE7" />
+        <path d="M 55 240 C 65 195 85 185 100 185 C 115 185 135 195 145 240 Z" fill="#18131E" stroke="#FF304F" strokeWidth="0.8" />
+        {/* Choker Necklace with Crimson Gem */}
+        <rect x="88" y="172" width="24" height="4.5" rx="2" fill="#131017" />
+        <circle cx="100" cy="174" r="2.8" fill="#FF304F" />
+
+        {/* Face Base */}
+        <path
+          d="M 64 92 C 64 65 80 50 100 50 C 120 50 136 65 136 92 C 136 126 122 155 100 160 C 78 155 64 126 64 92 Z"
+          fill="#FFF2EE"
+        />
+
+        {/* Ear Ornaments */}
+        <ellipse cx="63" cy="108" rx="4" ry="7" fill="#FCE4DE" />
+        <ellipse cx="137" cy="108" rx="4" ry="7" fill="#FCE4DE" />
+
+        {/* Cheeks Blush */}
+        {isBlushing && (
+          <g opacity="0.6">
+            <ellipse cx="78" cy="124" rx="7" ry="3.5" fill="#FF8196" />
+            <ellipse cx="122" cy="124" rx="7" ry="3.5" fill="#FF8196" />
+            {/* Cute Manga Diagonal Blush Lines */}
+            <line x1="75" y1="126" x2="79" y2="122" stroke="#FF304F" strokeWidth="0.75" />
+            <line x1="78" y1="126" x2="82" y2="122" stroke="#FF304F" strokeWidth="0.75" />
+            <line x1="119" y1="126" x2="123" y2="122" stroke="#FF304F" strokeWidth="0.75" />
+            <line x1="122" y1="126" x2="126" y2="122" stroke="#FF304F" strokeWidth="0.75" />
+          </g>
+        )}
+
+        {/* Eyebrows */}
+        <g stroke="#3A2336" strokeWidth="1.8" strokeLinecap="round" fill="none">
+          <path d={`M 75 ${getEyebrowY()} Q 84 ${getEyebrowY() - 3} 91 ${getEyebrowY() + (mood === 'sad' ? 3 : -1)}`} />
+          <path d={`M 125 ${getEyebrowY()} Q 116 ${getEyebrowY() - 3} 109 ${getEyebrowY() + (mood === 'sad' ? 3 : -1)}`} />
+        </g>
+
+        {/* Eyes (Blinking Logic) */}
+        {blink || mood === 'sleepy' ? (
+          <g stroke="#261622" strokeWidth="2.4" strokeLinecap="round" fill="none">
+            <path d="M 74 108 Q 84 114 92 108" />
+            <path d="M 126 108 Q 116 114 108 108" />
+          </g>
+        ) : (
+          <g>
+            {/* Eye Outer Eyeliner */}
+            <path d="M 72 106 Q 84 96 94 105" stroke="#1D121B" strokeWidth="2.8" fill="none" strokeLinecap="round" />
+            <path d="M 128 106 Q 116 96 106 105" stroke="#1D121B" strokeWidth="2.8" fill="none" strokeLinecap="round" />
+
+            {/* Irises */}
+            <ellipse cx="83" cy="108" rx="6.5" ry="8.5" fill="url(#irisGrad)" />
+            <ellipse cx="117" cy="108" rx="6.5" ry="8.5" fill="url(#irisGrad)" />
+
+            {/* Pupils */}
+            <ellipse cx="83" cy="109" rx="3" ry="4" fill="#2E040D" />
+            <ellipse cx="117" cy="109" rx="3" ry="4" fill="#2E040D" />
+
+            {/* Anime Sparkle Highlights */}
+            <circle cx="81" cy="105" r="2.2" fill="#FFFFFF" />
+            <circle cx="85.5" cy="111" r="1.1" fill="#FFFFFF" />
+            <circle cx="115" cy="105" r="2.2" fill="#FFFFFF" />
+            <circle cx="119.5" cy="111" r="1.1" fill="#FFFFFF" />
+          </g>
+        )}
+
+        {/* Cute Dainty Nose */}
+        <path d="M 100 133 L 99 136" stroke="#D19C91" strokeWidth="1.2" strokeLinecap="round" />
+
+        {/* Reactive Mouth */}
+        <path
+          d={getMouthD()}
+          fill={isSpeaking ? '#B81A32' : 'none'}
+          stroke="#9E2235"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+
+        {/* Front Hair Bangs and Styling */}
+        <path
+          d="M 60 88 C 60 50 80 40 100 40 C 120 40 140 50 140 88 C 135 75 125 72 118 72 C 105 72 105 84 97 84 C 90 84 85 73 75 73 C 68 73 63 78 60 88 Z"
+          fill="url(#hairGrad)"
+        />
+        {/* Soft front side-hair framing */}
+        <path d="M 64 88 C 61 115 63 145 69 155 C 67 135 68 110 71 90 Z" fill="#1C1420" />
+        <path d="M 136 88 C 139 115 137 145 131 155 C 133 135 132 110 129 90 Z" fill="#1C1420" />
+
+        {/* Subtle Anime Hair Luster Ring */}
+        <path d="M 68 62 Q 100 56 132 62" stroke="url(#hairHighlight)" strokeWidth="3" fill="none" />
+
+        {/* Listening Ear Animation Cue */}
+        {isListening && (
+          <g>
+            <circle cx="60" cy="105" r="5" fill="none" stroke="#FF8196" strokeWidth="1.5" className="animate-ping" opacity="0.6" />
+            <circle cx="140" cy="105" r="5" fill="none" stroke="#FF8196" strokeWidth="1.5" className="animate-ping" opacity="0.6" />
+          </g>
+        )}
+      </svg>
+    </div>
+  );
+};

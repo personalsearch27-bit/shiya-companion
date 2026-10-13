@@ -1,0 +1,180 @@
+import React from 'react';
+import { CharacterProfile, VoiceSettings } from '../types';
+import { X, ShieldCheck, Volume2 } from 'lucide-react';
+import { speechService } from '../services/speechService';
+
+interface Props {
+  isOpen: boolean;
+  onClose: () => void;
+  profile: CharacterProfile;
+  voiceSettings: VoiceSettings;
+  onSaveProfile: (profile: CharacterProfile) => void;
+  onSaveVoiceSettings: (settings: VoiceSettings) => void;
+  onClearAllData: () => void;
+}
+
+export const SettingsModal: React.FC<Props> = ({
+  isOpen,
+  onClose,
+  profile,
+  voiceSettings,
+  onSaveProfile,
+  onSaveVoiceSettings,
+  onClearAllData,
+}) => {
+  if (!isOpen) return null;
+
+  const voices = speechService.getVoices();
+
+  const handleTestVoice = () => {
+    speechService.speak(
+      `Hello! I'm ${profile.name}. It's wonderful talking with you today!`,
+      voiceSettings
+    );
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="bg-[#141219] border border-white/10 w-full max-w-md rounded-2xl p-5 shadow-2xl flex flex-col max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between pb-3 border-b border-white/10">
+          <h2 className="text-sm font-semibold text-white tracking-wide">Companion Settings</h2>
+          <button onClick={onClose} className="p-1 rounded-full text-[#A49BAA] hover:text-white">
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="space-y-4 py-4 text-xs">
+          {/* Personality settings */}
+          <div>
+            <label className="block text-[#A49BAA] mb-1">Companion Name</label>
+            <input
+              type="text"
+              value={profile.name}
+              onChange={(e) => onSaveProfile({ ...profile, name: e.target.value })}
+              className="w-full bg-[#09090D] border border-white/10 rounded-xl px-3 py-2 text-white outline-none focus:border-[#FF304F]"
+            />
+          </div>
+
+          <div>
+            <label className="block text-[#A49BAA] mb-1">Personality Prompt</label>
+            <textarea
+              rows={2}
+              value={profile.personality}
+              onChange={(e) => onSaveProfile({ ...profile, personality: e.target.value })}
+              className="w-full bg-[#09090D] border border-white/10 rounded-xl p-2.5 text-white outline-none focus:border-[#FF304F]"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="block text-[#A49BAA] mb-1">Formality</label>
+              <select
+                value={profile.formality}
+                onChange={(e) => onSaveProfile({ ...profile, formality: e.target.value as any })}
+                className="w-full bg-[#09090D] border border-white/10 rounded-xl px-2.5 py-2 text-white outline-none"
+              >
+                <option value="casual">Casual (Friendly)</option>
+                <option value="balanced">Balanced</option>
+                <option value="polite">Polite</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-[#A49BAA] mb-1">Response Length</label>
+              <select
+                value={profile.replyLength}
+                onChange={(e) => onSaveProfile({ ...profile, replyLength: e.target.value as any })}
+                className="w-full bg-[#09090D] border border-white/10 rounded-xl px-2.5 py-2 text-white outline-none"
+              >
+                <option value="concise">Concise & Quick</option>
+                <option value="normal">Standard</option>
+                <option value="detailed">Detailed</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Voice synthesis controls */}
+          <div className="pt-2 border-t border-white/10">
+            <h3 className="font-semibold text-white mb-2 flex items-center gap-1.5">
+              <Volume2 size={14} className="text-[#FF8196]" /> Speech Synthesis
+            </h3>
+
+            {voices.length > 0 && (
+              <div className="mb-2">
+                <label className="block text-[#A49BAA] mb-1">Browser Voice</label>
+                <select
+                  value={voiceSettings.voiceURI}
+                  onChange={(e) => onSaveVoiceSettings({ ...voiceSettings, voiceURI: e.target.value })}
+                  className="w-full bg-[#09090D] border border-white/10 rounded-xl px-2.5 py-2 text-white outline-none truncate"
+                >
+                  <option value="">Default Natural Voice</option>
+                  {voices.map((v) => (
+                    <option key={v.voiceURI} value={v.voiceURI}>
+                      {v.name} ({v.lang})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <div className="flex justify-between text-[#A49BAA] mb-1">
+                  <span>Speed</span>
+                  <span className="text-white">{voiceSettings.rate}x</span>
+                </div>
+                <input
+                  type="range"
+                  min="0.8"
+                  max="1.4"
+                  step="0.05"
+                  value={voiceSettings.rate}
+                  onChange={(e) => onSaveVoiceSettings({ ...voiceSettings, rate: parseFloat(e.target.value) })}
+                  className="w-full accent-[#FF304F]"
+                />
+              </div>
+              <div>
+                <div className="flex justify-between text-[#A49BAA] mb-1">
+                  <span>Pitch</span>
+                  <span className="text-white">{voiceSettings.pitch}x</span>
+                </div>
+                <input
+                  type="range"
+                  min="0.8"
+                  max="1.4"
+                  step="0.05"
+                  value={voiceSettings.pitch}
+                  onChange={(e) => onSaveVoiceSettings({ ...voiceSettings, pitch: parseFloat(e.target.value) })}
+                  className="w-full accent-[#FF304F]"
+                />
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleTestVoice}
+              className="mt-2.5 w-full py-1.5 rounded-lg bg-[#1D1922] border border-white/10 text-white hover:bg-white/5 active:scale-98"
+            >
+              Test Shiya Voice
+            </button>
+          </div>
+
+          {/* Privacy & Local Storage */}
+          <div className="pt-2 border-t border-white/10">
+            <div className="flex items-start gap-2 bg-[#09090D] p-3 rounded-xl border border-white/5">
+              <ShieldCheck size={16} className="text-emerald-400 shrink-0 mt-0.5" />
+              <p className="text-[11px] text-[#A49BAA] leading-relaxed">
+                Your conversations & avatars are stored exclusively in your browser (IndexedDB). No telemetry, tracking, or profiling is transmitted.
+              </p>
+            </div>
+            <button
+              onClick={onClearAllData}
+              className="mt-3 w-full py-2 rounded-xl text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 text-xs font-semibold transition"
+            >
+              Clear All Stored Data & Conversations
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};

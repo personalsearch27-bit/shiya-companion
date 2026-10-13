@@ -1,0 +1,60 @@
+import React, { useEffect, useRef } from 'react';
+import { VoiceState } from '../types';
+
+interface Props {
+  voiceState: VoiceState;
+}
+
+export const AudioVisualizer: React.FC<Props> = ({ voiceState }) => {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let animationId: number;
+    let step = 0;
+
+    const render = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const active = voiceState === 'speaking' || voiceState === 'listening';
+      const bars = 24;
+      const width = canvas.width / bars;
+
+      for (let i = 0; i < bars; i++) {
+        let height = 3;
+        if (active) {
+          const wave = Math.sin(step * 0.12 + i * 0.45);
+          height = Math.max(3, Math.abs(wave) * (canvas.height * 0.75));
+        }
+
+        const x = i * width + width * 0.2;
+        const y = (canvas.height - height) / 2;
+
+        ctx.fillStyle = voiceState === 'listening' ? '#FFB800' : '#FF304F';
+        ctx.beginPath();
+        ctx.roundRect(x, y, width * 0.6, height, 3);
+        ctx.fill();
+      }
+
+      step++;
+      animationId = requestAnimationFrame(render);
+    };
+
+    render();
+
+    return () => {
+      cancelAnimationFrame(animationId);
+    };
+  }, [voiceState]);
+
+  if (voiceState === 'idle') return null;
+
+  return (
+    <div className="w-full flex items-center justify-center py-1">
+      <canvas ref={canvasRef} width={220} height={28} className="rounded-md" />
+    </div>
+  );
+};

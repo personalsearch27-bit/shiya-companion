@@ -1,0 +1,175 @@
+import React, { useState, useEffect } from 'react';
+import { AppHeader } from './components/AppHeader';
+import { CharacterStage } from './components/CharacterStage';
+import { ChatPanel } from './components/ChatPanel';
+import { MessageComposer } from './components/MessageComposer';
+import { AudioVisualizer } from './components/AudioVisualizer';
+import { CustomizerModal } from './components/CustomizerModal';
+import { SettingsModal } from './components/SettingsModal';
+import { HistoryDrawer } from './components/HistoryDrawer';
+import { useChat } from './hooks/useChat';
+import { useVoiceAssistant } from './hooks/useVoiceAssistant';
+import {
+  loadProfile,
+  saveProfile,
+  loadVoiceSettings,
+  saveVoiceSettings,
+  getCustomAvatarBlob,
+  saveCustomAvatarBlob,
+  removeCustomAvatarBlob,
+} from './services/storageService';
+import { checkServerStatus } from './services/geminiService';
+import { MoodType, CharacterProfile, VoiceSettings, ConversationSession } from './types';
+
+export const App: React.FC = () => {
+  const [profile, setProfile] = useState<CharacterProfile>(loadProfile);
+  const [voiceSettings, setVoiceSettings] = useState<VoiceSettings>(loadVoiceSettings);
+  const [currentMood, setCurrentMood] = useState<MoodType>('happy');
+  const [engineStatus, setEngineStatus] = useState({ status: 'checking', hasApiKey: false, engine: 'Loading...' });
+
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+
+  // Load custom portrait if saved in IndexedDB
+  useEffect(() => {
+    (async () => {
+      const avatarBlob = await getCustomAvatarBlob();
+      if (avatarBlob) {
+        setProfile(prev => ({ ...prev, customAvatarUrl: avatarBlob }));
+      }
+    })();
+  }, []);
+
+  // Check backend server status
+  useEffect(() => {
+    checkServerStatus().then(setEngineStatus);
+  }, []);
+
+  const voiceAssistant = useVoiceAssistant(
+    voiceSettings,
+    (recognizedText) => chat.sendMessage(recognizedText),
+    (mood) => setCurrentMood(mood)
+  );
+
+  const chat = useChat(profile, (replyText, mood) => {
+    setCurrentMood(mood);
+    voiceAssistant.speakText(replyText, mood);
+  });
+
+  const handleUpdateProfile = (updated: CharacterProfile) => {
+    setProfile(updated);
+    saveProfile(updated);
+  };
+
+  const handleUpdateVoice = (updated: VoiceSettings) => {
+    setVoiceSettings(updated);
+    saveVoiceSettings(updated);
+  };
+
+  const handleUploadAvatar = async (base64: string) => {
+    await saveCustomAvatarBlob(base64);
+    setProfile(prev => ({ ...prev, customAvatarUrl: base64 }));
+  };
+
+  const handleResetAvatar = async () => {
+    await removeCustomAvatarBlob();
+    setProfile(prev => {
+      const copy = { ...prev };
+      delete copy.customAvatarUrl;
+      return copy;
+    });
+  };
+
+  const handleExportSession = (session: ConversationSession) => {
+    const text = session.messages
+      .map(m => `[${new Date(m.timestamp).toLocaleTimeString()}] ${m.sender === 'user' ? 'You' : profile.name}: ${m.text}`)
+      .join('\n\n');
+    const blob = new Blob([text], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Shiya-Chat-${session.title.replace(/[^a-zA-Z0-9]/g, '_')}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div className="flex flex-col h-[100dvh] w-full bg-[#09090D] overflow-hidden">
+      {/* Top Navigation */}
+      <AppHeader
+        engineStatus={engineStatus}
+        onOpenSettings={() => setIsSettingsOpen(true)}
+        onOpenCustomizer={() => setIsCustomizerOpen(true)}
+        onOpenHistory={() => setIsHistoryOpen(true)}
+      />
+
+      {/* Main Dual Layout (Mobile: Stacked, Desktop: Side-by-Side) */}
+      <main className="flex-1 flex flex-col md:flex-row min-h-0 overflow-hidden max-w-6xl w-full mx-auto">
+        {/* Left Character Stage */}
+        <div className="md:w-5/12 shrink-0 border-b md:border-b-0 md:border-r border-white/10 flex flex-col items-center justify-center bg-gradient-to-b from-[#141219]/60 to-transparent relative">
+          <CharacterStage
+            mood={currentMood}
+            voiceState={voiceAssistant.voiceState}
+            customAvatarUrl={profile.customAvatarUrl}
+            name={profile.name}
+            intensity={profile.animationIntensity}
+          />
+          <AudioVisualizer voiceState={voiceAssistant.voiceState} />
+        </div>
+
+        {/* Right Chat Panel */}
+        <div className="flex-1 flex flex-col min-h-0 bg-[#09090D]/50 relative">
+          <ChatPanel
+            messages={chat.messages}
+            isThinking={chat.isThinking}
+            onSelectPrompt={chat.sendMessage}
+          />
+          
+          <MessageComposer
+            onSendMessage={chat.sendMessage}
+            voiceState={voiceAssistant.voiceState}
+            ttsEnabled={voiceSettings.ttsEnabled}
+            onToggleVoiceMode={voiceAssistant.toggleVoiceMode}
+            onToggleTTS={() => handleUpdateVoice({ ...voiceSettings, ttsEnabled: !voiceSettings.ttsEnabled })}
+            disabled={chat.isThinking}
+          />
+        </div>
+      </main>
+
+      {/* Modals & Drawers */}
+      <CustomizerModal
+        isOpen={isCustomizerOpen}
+        onClose={() => setIsCustomizerOpen(false)}
+        profile={profile}
+        onSaveProfile={handleUpdateProfile}
+        onUploadAvatar={handleUploadAvatar}
+        onResetAvatar={handleResetAvatar}
+        onTestMood={setCurrentMood}
+      />
+
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        profile={profile}
+        voiceSettings={voiceSettings}
+        onSaveProfile={handleUpdateProfile}
+        onSaveVoiceSettings={handleUpdateVoice}
+        onClearAllData={chat.clearAll}
+      />
+
+      <HistoryDrawer
+        isOpen={isHistoryOpen}
+        onClose={() => setIsHistoryOpen(false)}
+        sessions={chat.sessions}
+        activeId={chat.currentSessionId}
+        onSelectSession={chat.setCurrentSessionId}
+        onNewSession={chat.createNewSession}
+        onDeleteSession={chat.removeSession}
+        onExportSession={handleExportSession}
+      />
+    </div>
+  );
+};
+
+export default App;
